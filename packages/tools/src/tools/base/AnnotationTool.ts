@@ -564,18 +564,31 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
   public static createAnnotationMemo(
     element,
     annotation: Annotation,
-    options?: { newAnnotation?: boolean; deleting?: boolean }
+    options?: {
+      newAnnotation?: boolean;
+      deleting?: boolean;
+      textChange?: boolean;
+      oldText?: string;
+      newText?: string;
+    }
   ) {
     if (!annotation) {
       return;
     }
-    const { newAnnotation, deleting = newAnnotation ? false : undefined } =
-      options || {};
+    const {
+      newAnnotation,
+      deleting = newAnnotation ? false : undefined,
+      textChange = false,
+      oldText = '',
+      newText = '',
+    } = options || {};
     const { annotationUID } = annotation;
     const state = AnnotationTool.createAnnotationState(annotation, deleting);
 
     const annotationMemo = {
-      restoreMemo: () => {
+      restoreMemo: (redo) => {
+        const _oldText = oldText;
+        const _newText = newText;
         const newState = AnnotationTool.createAnnotationState(
           annotation,
           deleting
@@ -637,6 +650,9 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
           ).pointsManager.points;
         }
         state.data = newState.data;
+        if (textChange) {
+          currentAnnotation.data.label = !redo ? _newText : _oldText;
+        }
         currentAnnotation.invalidated = true;
         triggerAnnotationModified(
           currentAnnotation,
